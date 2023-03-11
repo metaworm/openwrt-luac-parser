@@ -1,0 +1,18 @@
+[workspace]
+members = ['.', 'dylib']
+
+[package]
+name = "openwrt-luac-parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rmp-serde = "1"
+anyhow = '1'
+nom = "7"
+log = "0.4"
+nom-supreme = '0.8'
+enum_primitive = "0.1"
+luac-parser = '0.1'
+serde = {version = '1', features = ['derive']}
+wasm-bindgen = {version = "0.2"}
