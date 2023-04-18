@@ -1,5 +1,5 @@
 #![feature(ptr_sub_ptr)]
-#![feature(once_cell)]
+#![feature(lazy_cell)]
 #![allow(improper_ctypes_definitions)]
 
 pub mod custom;
@@ -20,7 +20,6 @@ use nom::{
     sequence::{delimited, tuple},
 };
 use nom::{
-    bytes::complete::take,
     combinator::success,
     error::{context, ErrorKind, ParseError},
     multi::{length_count, length_data},
@@ -32,109 +31,38 @@ use nom_supreme::{error::*, ParserExt};
 fn lua_header(input: &[u8]) -> IResult<&[u8], LuaHeader, ErrorTree<&[u8]>> {
     let (rest, (_, result)) = tuple((
         tag(b"\x1BLua"),
-        alt((
-            map(
-                tuple((
-                    tag(b"\x51"),
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                )),
-                |(
-                    _,
-                    format_version,
-                    big_endian,
-                    int_size,
-                    size_t_size,
-                    instruction_size,
-                    number_size,
-                    number_integral,
-                )| LuaHeader {
-                    lua_version: 0x51,
-                    format_version,
-                    big_endian: big_endian != 1,
-                    int_size,
-                    size_t_size,
-                    instruction_size,
-                    number_size,
-                    number_integral: number_integral != 0,
-                },
-            ),
-            map(
-                tuple((
-                    tag(b"\x53"),
-                    be_u8,
-                    take(6usize), // LUAC_DATA
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    complete::le_i64,
-                    complete::le_f64,
-                    be_u8,
-                )),
-                |(
-                    _,
-                    format_version,
-                    _luac_data,
-                    int_size,
-                    size_t_size,
-                    instruction_size,
-                    _integer_size, // lua_Integer
-                    number_size,
-                    _,
-                    _,
-                    _,
-                )| LuaHeader {
-                    lua_version: 0x53,
-                    format_version,
-                    big_endian: cfg!(target_endian = "big"),
-                    int_size,
-                    size_t_size,
-                    instruction_size,
-                    number_size,
-                    number_integral: false,
-                },
-            ),
-            map(
-                tuple((
-                    tag(b"\x54"),
-                    be_u8,
-                    take(6usize), // LUAC_DATA
-                    be_u8,
-                    be_u8,
-                    be_u8,
-                    complete::le_i64,
-                    complete::le_f64,
-                    be_u8,
-                )),
-                |(
-                    _,
-                    format_version,
-                    _luac_data,
-                    instruction_size,
-                    _integer_size, // lua_Integer
-                    number_size,
-                    _,
-                    _,
-                    _,
-                )| LuaHeader {
-                    lua_version: 0x54,
-                    format_version,
-                    big_endian: cfg!(target_endian = "big"),
-                    int_size: 4,
-                    size_t_size: 8,
-                    instruction_size,
-                    number_size,
-                    number_integral: false,
-                },
-            ),
-        )),
+        alt((map(
+            tuple((
+                tag(b"\x51"),
+                be_u8,
+                be_u8,
+                be_u8,
+                be_u8,
+                be_u8,
+                be_u8,
+                be_u8,
+            )),
+            |(
+                _,
+                format_version,
+                big_endian,
+                int_size,
+                size_t_size,
+                instruction_size,
+                number_size,
+                number_integral,
+            )| LuaHeader {
+                lua_version: 0x51,
+                format_version,
+                big_endian: big_endian != 1,
+                int_size,
+                size_t_size,
+                instruction_size,
+                number_size,
+                number_integral: number_integral != 0,
+                ..Default::default()
+            },
+        ),)),
     ))(input)?;
     Ok((rest, result))
 }
