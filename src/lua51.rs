@@ -14,6 +14,7 @@ fn lua_local<'a>(header: &LuaHeader) -> impl Parser<&'a [u8], LuaLocal, ErrorTre
             name: String::from_utf8_lossy(name).into(),
             start_pc,
             end_pc,
+            ..Default::default()
         })
         .context("local")
 }
