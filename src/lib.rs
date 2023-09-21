@@ -163,20 +163,21 @@ pub fn lua_bytecode(input: &[u8]) -> IResult<&[u8], LuaBytecode, ErrorTree<&[u8]
     Ok((input, LuaBytecode { header, main_chunk }))
 }
 
-pub fn parse_(input: &[u8]) -> Result<LuaBytecode, String> {
+pub fn parse_(input: &[u8]) -> anyhow::Result<LuaBytecode> {
     lua_bytecode(input).map(|x| x.1).map_err(|e| {
-        format!(
+        anyhow::anyhow!(
             "{:#?}",
             e.map(|e| e.map_locations(|p| unsafe { p.as_ptr().sub_ptr(input.as_ptr()) }))
         )
     })
 }
 
-#[cfg(not(target_family = "wasm"))]
-#[no_mangle]
-pub fn parse(luac: &[u8]) -> Result<Vec<u8>, String> {
-    parse_(luac)
-        .map_err(|e| e.to_string())?
+use extism_pdk::*;
+
+#[plugin_fn]
+pub fn parse(luac: Vec<u8>) -> FnResult<Vec<u8>> {
+    parse_(&luac)
+        .map_err(|e| WithReturnCode::from(e))?
         .to_msgpack()
-        .map_err(|e| e.to_string())
+        .map_err(|e| WithReturnCode::from(e))
 }
