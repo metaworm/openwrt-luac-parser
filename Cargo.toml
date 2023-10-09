@@ -10,7 +10,7 @@ nom = "7"
 log = "0.4"
 nom-supreme = '0.8'
 enum_primitive = "0.1"
-luac-parser = '0.4'
+luac-parser = '0.5'
 extism-pdk = "0.3.4"
 serde = {version = '1', features = ['derive']}
 
